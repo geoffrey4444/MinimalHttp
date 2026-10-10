@@ -40,7 +40,7 @@ def send_and_handle_request(sock, r):
   body = response[-1]
   
   log(f"Host confirms {status[0]}")
-  log(f"Status code {status[1]} = {" ".join(status[2:])}")
+  log(f"Status code {status[1]} = {' '.join(status[2:])}")
   log("Headers received:", "\n".join([f"{key}: {headers[key]}" for key in headers]))
   try:
     log("Body received:", body.decode())
