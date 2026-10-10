@@ -31,17 +31,17 @@ def send_and_handle_request(sock, r):
     reply += bytes_received
   
   response = reply.split(b'\r\n\r\n', 1)
-  header_text = response[0].decode().splitlines()
+  header_text = response[0].decode('latin-1').split('\r\n')
   status = header_text[0].split()
-  headers = {}
+  headers = []
   for header in header_text[1:]:
-      name, value = header.split(": ", 1)
-      headers[name.lower()] = value.strip()
+      name, value = header.split(":", 1)
+      headers.append((name.lower(), value.strip(' \t')))
   body = response[-1]
   
   log(f"Host confirms {status[0]}")
   log(f"Status code {status[1]} = {' '.join(status[2:])}")
-  log("Headers received:", "\n".join([f"{key}: {headers[key]}" for key in headers]))
+  log("Headers received:", "\n".join([f"{key}: {value}" for key, value in headers]))
   try:
     log("Body received:", body.decode())
   except UnicodeDecodeError:
@@ -67,7 +67,7 @@ log("Address info:", info)
 
 r = "\r\n".join([
     f"GET {dest} HTTP/1.1",
-    f"Host: {host}",
+    f"Host: {host}" if args.port is None else f"Host: {host}:{port}",
     "User-Agent: geoffrey4444-http/0.1",
     "Accept: */*",
     "Connection: close",
