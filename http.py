@@ -2,12 +2,17 @@ import argparse
 from datetime import datetime
 import socket
 
+def log(message, appendix=None):
+  print(f"{datetime.now()} -- {message}")
+  if appendix is not None:
+      print(f"****\n{appendix}\n****")
+
 default_dest = "/get"
 default_host = "httpbingo.org"
 default_port = 80
 
 p = argparse.ArgumentParser(description="Minimal http client")
-p.add_argument("--dest", help=f"Destination for get request (default: {default_dest}", default=default_dest)
+p.add_argument("--dest", help=f"Destination for get request (default: {default_dest})", default=default_dest)
 p.add_argument("--host", help=f"Host for request (default: {default_host})", default=default_host)
 p.add_argument("--port", type=int, help=f"Port to connect (default: {default_port})", default=default_port)
 args = p.parse_args()
@@ -17,13 +22,7 @@ port = args.port
 dest = args.dest
 
 info = socket.getaddrinfo(host, port)
-
-def log(message, appendix=None):
-  print(f"{datetime.now()} -- {message}")
-  if appendix is not None:
-      print(f"****\n{appendix}\n****")
-
-log(f"Connecting to {host} ({info[-1][-1][0]}) on port {port}")
+log("Address info:", info)
 
 r = "\r\n".join([
     f"GET {dest} HTTP/1.1",
@@ -38,6 +37,8 @@ log("Sending request:", r)
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
   s.settimeout(4)
+
+  log(f"Connecting to {host} on port {port}")
   s.connect((host, port))
   log(f"Connected to {s.getpeername()[0]} on port {s.getpeername()[1]}")
   
@@ -49,14 +50,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     bytes_received = s.recv(4096)
     reply += bytes_received
   
-  # response = reply.decode().split("\r\n\r\n")
-  response = reply.split(b'\r\n\r\n')
+  response = reply.split(b'\r\n\r\n', 1)
   header_text = response[0].decode().splitlines()
   status = header_text[0].split()
   headers = {}
   for header in header_text[1:]:
-      split = header.split(": ")
-      headers[split[0]] = split[1]
+      name, value = header.split(": ", 1)
+      headers[name.lower()] = value.strip()
   body = response[-1]
   
   log(f"Host confirms {status[0]}")
@@ -64,7 +64,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
   log("Headers received:", "\n".join([f"{key}: {headers[key]}" for key in headers]))
   try:
     log("Body received:", body.decode())
-  except:
+  except UnicodeDecodeError:
     log("Body received:", body)
 
 
