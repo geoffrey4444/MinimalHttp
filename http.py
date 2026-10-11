@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 import socket
 import ssl
+import time
 
 def log(message, appendix=None):
   print(f"{datetime.now()} -- {message}")
@@ -9,11 +10,14 @@ def log(message, appendix=None):
       print(f"****\n{appendix}\n****")
 
 def send_and_handle_request(sock, r):
-  sock.settimeout(4)
+  sock.settimeout(40)
 
   log(f"Connecting to {host} on port {port}")
-  
+
+  start = time.perf_counter()
   sock.connect((host, port))
+  elapsed = time.perf_counter() - start
+  log(f"TCP round-trip time estimate: {elapsed * 1000:.2f} ms")
   
   log(f"Connected to {sock.getpeername()[0]} on port {sock.getpeername()[1]}")
 
