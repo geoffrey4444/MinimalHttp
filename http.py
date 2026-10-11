@@ -17,6 +17,11 @@ def send_and_handle_request(sock, r):
   start = time.perf_counter()
   sock.connect((host, port))
   elapsed = time.perf_counter() - start
+  if args.ssl:
+    # SYN sent, SYN-ACK received = round-trip time (one packet each way)
+    # But if using ssl + TSL 1.3, the TLS handshake is another
+    # 1 packet sent and 1 received, so sock.connect() takes ~2x longer
+    elapsed *= 0.5
   log(f"TCP round-trip time estimate: {elapsed * 1000:.2f} ms")
   
   log(f"Connected to {sock.getpeername()[0]} on port {sock.getpeername()[1]}")
